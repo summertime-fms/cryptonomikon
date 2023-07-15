@@ -1,7 +1,7 @@
 <template>
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
-    <!-- <div
-      class="fixed w-100 h-100 opacity-80 bg-purple-800 inset-0 z-50 flex items-center justify-center"
+    <div
+        v-if="isLoading" class="fixed w-100 h-100 opacity-80 bg-purple-800 inset-0 z-50 flex items-center justify-center"
     >
       <svg
         class="animate-spin -ml-1 mr-3 h-12 w-12 text-white"
@@ -23,7 +23,7 @@
           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
         ></path>
       </svg>
-    </div> -->
+    </div>
     <div class="container">
       <section>
         <div class="flex">
@@ -43,6 +43,7 @@
               />
             </div>
             <div
+                v-if="this.coinsList"
               class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
             >
               <span
@@ -180,11 +181,13 @@ export default {
   components: {},
   data() {
     return {
+      isLoading: false,
       newTicker: "",
       tickerExistsError: false,
       tickers: [],
       selected: null,
-      graph: []
+      graph: [],
+      coinsList: null
     };
   },
   methods: {
@@ -231,6 +234,22 @@ export default {
     'selected.value': function() {
       this.graph.push(this.selected?.value);
     }
+  },
+  async created() {
+    this.isLoading = true;
+    await fetch('https://min-api.cryptocompare.com/data/all/coinlist?summary=true')
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Failed to fetch.')
+          }
+          return res.json();
+        }).then(data => {
+          this.coinsList = data;
+        }).catch(err => {
+          console.error(err)
+        }).finally(() => {
+          this.isLoading = false;
+        })
   }
 };
 </script>
