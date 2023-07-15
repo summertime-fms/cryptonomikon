@@ -33,6 +33,7 @@
             >
             <div class="mt-1 relative rounded-md shadow-md">
               <input
+                  @input="getHints"
                 @keydown.enter="addTicker"
                 v-model="newTicker"
                 type="text"
@@ -43,28 +44,15 @@
               />
             </div>
             <div
-                v-if="this.coinsList"
+                v-if="hints.length > 0"
               class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
             >
               <span
+                  v-for="(hint, idx) in hints"
+                  :key="idx"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
-                BTC
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                DOGE
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                BCH
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                CHD
+                {{hint}}
               </span>
             </div>
             <div v-if="tickerExistsError" class="text-sm text-red-600">
@@ -187,7 +175,8 @@ export default {
       tickers: [],
       selected: null,
       graph: [],
-      coinsList: null
+      coinsList: null,
+      hints: []
     };
   },
   methods: {
@@ -228,6 +217,19 @@ export default {
     selectTicker(t) {
       this.selected = t;
       this.graph = [];
+    },
+    getHints() {
+      if (this.newTicker.length === 0) {
+        this.hints = [];
+        return;
+      }
+
+      const ticker = this.newTicker.toUpperCase();
+      this.hints =  [...this.coinsList].filter(coin => coin.startsWith(ticker)).sort((a) => {
+        if (a === ticker) {
+          return -1;
+        }
+      }).slice(0, 4);
     }
   },
   watch: {
@@ -244,7 +246,7 @@ export default {
           }
           return res.json();
         }).then(data => {
-          this.coinsList = data;
+          this.coinsList = Object.keys(data.Data);
         }).catch(err => {
           console.error(err)
         }).finally(() => {
