@@ -182,6 +182,14 @@ export default {
     };
   },
   methods: {
+    setUpdateInterval(t) {
+      t.updateInterval = setTimeout(async () => {
+        const f = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${t.label}&tsyms=USD&api_key=75ecf3e0bb8a780c18e20f11be3de9d6f9367f87a57d6d65b2d5ebf49c6ec6b7`);
+        const data = await f.json();
+        t.value = data.USD;
+      }, 3000);
+    },
+
     addTicker(hint) {
       this.tickerExistsError = this.tickers.some(
         (ticker) => ticker.label === this.newTicker.toUpperCase()
@@ -200,14 +208,12 @@ export default {
       this.tickers.push(currentTicker);
       const t = this.tickers.find(ticker => ticker.label === currentTicker.label);
 
-      t.updateInterval = setInterval(async () => {
-        const f = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.label}&tsyms=USD&api_key=75ecf3e0bb8a780c18e20f11be3de9d6f9367f87a57d6d65b2d5ebf49c6ec6b7`);
-        const data = await f.json();
-        t.value = data.USD;
-      }, 3000);
+      this.setUpdateInterval(t);
 
       this.newTicker = "";
       this.hints = [];
+      console.log(t)
+      localStorage.setItem('tickers', JSON.stringify(this.tickers));
     },
     deleteTicker(ticker) {
       clearInterval(ticker.updateInterval);
@@ -215,6 +221,7 @@ export default {
         this.selected = null;
       }
       this.tickers = this.tickers.filter((t) => t !== ticker);
+      localStorage.setItem('tickers', JSON.stringify(this.tickers));
     },
     normalizeGraph() {
       const minValue = Math.min(...this.graph);
@@ -259,7 +266,10 @@ export default {
           console.error(err)
         }).finally(() => {
           this.isLoading = false;
-        })
+        });
+
+    this.tickers = JSON.parse(localStorage.getItem('tickers'));
+    this.tickers.forEach(t => this.setUpdateInterval(t))
   }
 };
 </script>
