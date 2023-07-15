@@ -182,12 +182,16 @@ export default {
     };
   },
   methods: {
-    addTicker() {
+    addTicker(hint) {
       this.tickerExistsError = this.tickers.some(
         (ticker) => ticker.label === this.newTicker.toUpperCase()
       );
 
-      if (this.tickerExistsError) return;
+      if (this.tickerExistsError && hint) {
+        this.newTicker = hint;
+        return;
+      }
+
       const currentTicker = {
         label: this.newTicker.toUpperCase(),
         value: "-- --",
@@ -224,6 +228,7 @@ export default {
     getHints() {
       if (this.newTicker.length === 0) {
         this.hints = [];
+        this.tickerExistsError = false;
         return;
       }
 
