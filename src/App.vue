@@ -50,6 +50,7 @@
               <span
                   v-for="(hint, idx) in hints"
                   :key="idx"
+                  @click="addTicker(hint)"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
                 {{hint}}
@@ -62,6 +63,7 @@
         </div>
         <button
           @click="addTicker"
+          :disabled="tickerExistsError"
           type="button"
           class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
         >
@@ -182,7 +184,7 @@ export default {
   methods: {
     addTicker() {
       this.tickerExistsError = this.tickers.some(
-        (ticker) => ticker.label === this.newTicker
+        (ticker) => ticker.label === this.newTicker.toUpperCase()
       );
 
       if (this.tickerExistsError) return;
@@ -201,6 +203,7 @@ export default {
       }, 3000);
 
       this.newTicker = "";
+      this.hints = [];
     },
     deleteTicker(ticker) {
       clearInterval(ticker.updateInterval);
