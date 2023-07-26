@@ -289,10 +289,23 @@ export default {
   watch: {
     'selected.value': function() {
       this.graph.push(this.selected?.value);
+    },
+    page() {
+      history.pushState(null, document.title, `${window.location.pathname}?filter=${this.filter}&page=${this.page}`);
+    },
+    filter() {
+      history.pushState(null, document.title, `${window.location.pathname}?filter=${this.filter}&page=${this.page}`);
+
     }
   },
   async created() {
     this.isLoading = true;
+    const params = Object.fromEntries([...new URL(window.location).searchParams.entries()]);
+    const {page, filter} = params;
+    this.filter = filter ?? '';
+    this.page = page ?? 1;
+
+    console.log(params)
     await fetch('https://min-api.cryptocompare.com/data/all/coinlist?summary=true')
         .then(res => {
           if (!res.ok) {
