@@ -34,7 +34,7 @@
             <div class="mt-1 relative rounded-md shadow-md">
               <input
                   @input="getHints"
-                @keydown.enter="addTicker"
+                @keydown.enter="addTicker(newTicker)"
                 v-model="newTicker"
                 type="text"
                 name="wallet"
@@ -82,13 +82,38 @@
           </svg>
           Добавить
         </button>
+
+
+        <p>Текущая страница: {{page}}</p>
+        <div v-if="tickers.length > 6">
+          <button
+              @click="page--"
+              :disabled="page === 1"
+              type="button"
+              class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">Назад
+          </button>
+          <button
+              @click="page++"
+              type="button"
+              :disabled="page * 6 >= tickers.length"
+              class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">Вперед
+          </button>
+
+        </div>
+        <div>
+            <span>
+              Фильтр:
+            </span>
+
+          <input v-model="filter" type="text">
+        </div>
       </section>
 
       <template v-if="tickers.length > 0">
         <hr class="w-full border-t border-gray-600 my-4" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
-            v-for="t in tickers"
+            v-for="t in filteredTickers()"
             :key="t.label"
             @click="selectTicker(t)"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
@@ -178,7 +203,9 @@ export default {
       selected: null,
       graph: [],
       coinsList: null,
-      hints: []
+      hints: [],
+      page: 1,
+      filter: ''
     };
   },
   methods: {
@@ -190,18 +217,19 @@ export default {
       }, 3000);
     },
 
-    addTicker(hint) {
+    addTicker(newTicker) {
+      if (!newTicker.length) return;
       this.tickerExistsError = this.tickers.some(
-        (ticker) => ticker.label === this.newTicker.toUpperCase()
+        (ticker) => ticker.label === newTicker.toUpperCase()
       );
 
-      if (this.tickerExistsError && hint) {
-        this.newTicker = hint;
+      if (this.tickerExistsError) {
+        this.newTicker = newTicker;
         return;
       }
 
       const currentTicker = {
-        label: this.newTicker.toUpperCase(),
+        label: newTicker.toUpperCase(),
         value: "-- --",
       };
 
@@ -212,9 +240,10 @@ export default {
 
       this.newTicker = "";
       this.hints = [];
-      console.log(t)
       localStorage.setItem('tickers', JSON.stringify(this.tickers));
+      this.filter = '';
     },
+
     deleteTicker(ticker) {
       clearInterval(ticker.updateInterval);
       if (this.selected?.label === ticker.label) {
@@ -223,15 +252,18 @@ export default {
       this.tickers = this.tickers.filter((t) => t !== ticker);
       localStorage.setItem('tickers', JSON.stringify(this.tickers));
     },
+
     normalizeGraph() {
       const minValue = Math.min(...this.graph);
       const maxValue = Math.max(...this.graph);
       return this.graph.map(price => ((price - minValue) * 100) / (maxValue - minValue));
     },
+
     selectTicker(t) {
       this.selected = t;
       this.graph = [];
     },
+
     getHints() {
       if (this.newTicker.length === 0) {
         this.hints = [];
@@ -245,6 +277,13 @@ export default {
           return -1;
         }
       }).slice(0, 4);
+    },
+
+    filteredTickers() {
+      const start = (this.page - 1) * 6;
+      const end = this.page * 6 ;
+      [...this.tickers].slice(6 * (this.page - 1), 6 * this.page - 1);
+      return this.tickers.filter(({label}) => label.includes(this.filter.toUpperCase())).slice(start, end);
     }
   },
   watch: {
@@ -268,8 +307,10 @@ export default {
           this.isLoading = false;
         });
 
-    this.tickers = JSON.parse(localStorage.getItem('tickers'));
+
+    this.tickers = JSON.parse(localStorage.getItem('tickers')) ?? [];
     this.tickers.forEach(t => this.setUpdateInterval(t))
+
   }
 };
 </script>
