@@ -209,11 +209,21 @@ export default {
     };
   },
   methods: {
-    setUpdateInterval(t) {
-      t.updateInterval = setTimeout(async () => {
-        const f = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${t.label}&tsyms=USD&api_key=75ecf3e0bb8a780c18e20f11be3de9d6f9367f87a57d6d65b2d5ebf49c6ec6b7`);
+    setUpdateInterval() {
+      const tickersNames = this.tickers.map((t) => t.label).join(',');
+
+      if (this.interval) {
+        clearInterval(this.interval)
+      }
+
+      this.interval = setInterval(async () => {
+        const f = await fetch(`https://min-api.cryptocompare.com/data/pricemulti?fsyms=${tickersNames}&tsyms=USD&api_key=75ecf3e0bb8a780c18e20f11be3de9d6f9367f87a57d6d65b2d5ebf49c6ec6b7`);
         const data = await f.json();
-        t.value = data.USD;
+
+        this.tickers.forEach(t => {
+          const {label} = t;
+          t.value = data[label].USD;
+        })
       }, 3000);
     },
 
@@ -295,7 +305,11 @@ export default {
     },
     filter() {
       history.pushState(null, document.title, `${window.location.pathname}?filter=${this.filter}&page=${this.page}`);
-
+    },
+    tickers() {
+      if (this.tickers.length > 0) {
+        this.setUpdateInterval();
+      }
     }
   },
   async created() {
@@ -305,7 +319,6 @@ export default {
     this.filter = filter ?? '';
     this.page = page ?? 1;
 
-    console.log(params)
     await fetch('https://min-api.cryptocompare.com/data/all/coinlist?summary=true')
         .then(res => {
           if (!res.ok) {
@@ -322,8 +335,6 @@ export default {
 
 
     this.tickers = JSON.parse(localStorage.getItem('tickers')) ?? [];
-    this.tickers.forEach(t => this.setUpdateInterval(t))
-
   }
 };
 </script>
